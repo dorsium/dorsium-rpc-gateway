@@ -1,0 +1,13 @@
+{
+  "name": "dorsium-rpc-gateway",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^30.0.3"
+  }
+}
