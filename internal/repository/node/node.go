@@ -1,0 +1,82 @@
+package node
+
+import (
+	"errors"
+	"time"
+
+	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
+)
+
+// Repository abstracts node data storage.
+type Repository interface {
+	Get(id string) (*model.Node, error)
+	Update(n *model.Node) error
+	List() ([]model.Node, error)
+}
+
+type repo struct {
+	store map[string]model.Node
+}
+
+// ErrNotFound is returned when a node does not exist.
+var ErrNotFound = errors.New("node not found")
+
+// New returns an in-memory node repository with mock data.
+func New() Repository {
+	r := &repo{store: make(map[string]model.Node)}
+	now := time.Now()
+	r.store["node1"] = model.Node{
+		ID:       "node1",
+		Label:    "Gateway Node 1",
+		Identity: "node-one",
+		Location: "Earth",
+		Status: model.NodeStatus{
+			Health:    "healthy",
+			LastPing:  now,
+			SyncState: "synced",
+		},
+		Metrics: model.NodeMetrics{
+			Uptime:       99.9,
+			RequestCount: 1000,
+			AvgResponse:  0.2,
+		},
+	}
+	r.store["node2"] = model.Node{
+		ID:       "node2",
+		Label:    "Gateway Node 2",
+		Identity: "node-two",
+		Location: "Mars",
+		Status: model.NodeStatus{
+			Health:    "healthy",
+			LastPing:  now,
+			SyncState: "syncing",
+		},
+		Metrics: model.NodeMetrics{
+			Uptime:       95.1,
+			RequestCount: 800,
+			AvgResponse:  0.25,
+		},
+	}
+	return r
+}
+
+func (r *repo) Get(id string) (*model.Node, error) {
+	n, ok := r.store[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return &n, nil
+}
+
+func (r *repo) Update(n *model.Node) error {
+	r.store[n.ID] = *n
+	return nil
+}
+
+func (r *repo) List() ([]model.Node, error) {
+	res := make([]model.Node, 0, len(r.store))
+	for _, n := range r.store {
+		res = append(res, n)
+	}
+	return res, nil
+}
