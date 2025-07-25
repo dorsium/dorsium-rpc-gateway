@@ -1,21 +1,37 @@
 package config
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 // Config holds application configuration.
 type Config struct {
-	Address      string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	NodeRPC      string
+	Address        string
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+	NodeRPC        string
+	Version        string
+	Mode           string
+	DisableMetrics bool
 }
 
 // New creates a Config with default values.
 func New() *Config {
-	return &Config{
+	c := &Config{
 		Address:      ":8080",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		NodeRPC:      "http://localhost:26657",
+		Version:      "dev",
+		Mode:         "production",
 	}
+	if v := os.Getenv("APP_VERSION"); v != "" {
+		c.Version = v
+	}
+	if m := os.Getenv("APP_MODE"); m != "" {
+		c.Mode = m
+	}
+	c.DisableMetrics = os.Getenv("DISABLE_METRICS") == "true"
+	return c
 }

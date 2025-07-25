@@ -1,6 +1,11 @@
 package http
 
 import (
+	"fmt"
+	"runtime"
+	"sync"
+	"time"
+
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
 	dapphttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/dapp"
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
@@ -24,6 +29,7 @@ import (
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/gofiber/fiber/v2"
+	"github.com/shirou/gopsutil/v3/cpu"
 )
 
 // Server holds dependencies for HTTP handlers and routes.
@@ -31,16 +37,30 @@ type Server struct {
 	cfg     *config.Config
 	app     *fiber.App
 	service service.Service
+	start   time.Time
+	mu      sync.Mutex
+	calls   map[string]int
 }
 
 // NewServer creates a Server with all dependencies wired.
 func NewServer(cfg *config.Config, svc service.Service) *Server {
 	app := fiber.New()
-	return &Server{cfg: cfg, app: app, service: svc}
+	s := &Server{cfg: cfg, app: app, service: svc, start: time.Now(), calls: make(map[string]int)}
+	app.Use(func(c *fiber.Ctx) error {
+		s.mu.Lock()
+		s.calls[c.Path()]++
+		s.mu.Unlock()
+		return c.Next()
+	})
+	return s
 }
 
 // RegisterRoutes sets up HTTP routes.
 func (s *Server) RegisterRoutes() {
+	s.app.Get("/status", s.status)
+	s.app.Get("/metrics", s.metrics)
+	s.app.Get("/mode", s.mode)
+
 	api := s.app.Group("/api")
 	api.Get("/ping", s.ping)
 
@@ -110,6 +130,35 @@ func (s *Server) ping(c *fiber.Ctx) error {
 
 func (s *Server) placeholder(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "not implemented"})
+}
+
+func (s *Server) status(c *fiber.Ctx) error {
+	uptime := time.Since(s.start).Seconds()
+	return c.JSON(fiber.Map{
+		"version": s.cfg.Version,
+		"uptime":  uptime,
+		"health":  "ok",
+	})
+}
+
+func (s *Server) metrics(c *fiber.Ctx) error {
+	if s.cfg.DisableMetrics {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "metrics disabled"})
+	}
+	cpuPerc, _ := cpu.Percent(0, false)
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	metrics := fmt.Sprintf("# HELP cpu_usage_percent CPU usage percent\n# TYPE cpu_usage_percent gauge\ncpu_usage_percent %.2f\n# HELP ram_usage_bytes RAM usage bytes\n# TYPE ram_usage_bytes gauge\nram_usage_bytes %d\n", cpuPerc[0], m.Alloc)
+	s.mu.Lock()
+	for ep, count := range s.calls {
+		metrics += fmt.Sprintf("endpoint_calls_total{endpoint=\"%s\"} %d\n", ep, count)
+	}
+	s.mu.Unlock()
+	return c.Type("text/plain").SendString(metrics)
+}
+
+func (s *Server) mode(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"mode": s.cfg.Mode})
 }
 
 // Start runs the HTTP server.
