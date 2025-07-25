@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
+	dapphttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/dapp"
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
 	nfthttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/nft"
 	nodehttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/node"
@@ -12,6 +13,7 @@ import (
 	validatorrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/validator"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
+	dappservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/dapp"
 	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
 	nftservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
 	nodeservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/node"
@@ -52,6 +54,12 @@ func (s *Server) RegisterRoutes() {
 	nHandler := nfthttp.NewHandler(nSvc)
 	nftGroup := api.Group("/nft")
 	nHandler.RegisterRoutes(nftGroup)
+
+	// dapp routes
+	dSvc := dappservice.New(nRepo)
+	dHandler := dapphttp.NewHandler(dSvc)
+	dappGroup := api.Group("/dapp")
+	dHandler.RegisterRoutes(dappGroup)
 
 	// validator routes
 	vRepo := validatorrepo.New()
