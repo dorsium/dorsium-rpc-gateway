@@ -2,7 +2,10 @@ package http
 
 import (
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
+	wallethttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/wallet"
+	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
+	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -23,6 +26,13 @@ func NewServer(cfg *config.Config, svc service.Service) *Server {
 func (s *Server) RegisterRoutes() {
 	api := s.app.Group("/api")
 	api.Get("/ping", s.ping)
+
+	// wallet routes
+	repo := walletrepo.New()
+	svc := walletservice.New(repo)
+	handler := wallethttp.NewHandler(svc)
+	walletGroup := api.Group("/wallet")
+	handler.RegisterRoutes(walletGroup)
 
 	// Placeholders for future endpoints
 	for i := 0; i < 25; i++ {
