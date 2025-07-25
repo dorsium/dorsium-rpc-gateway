@@ -5,14 +5,17 @@ import (
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
 	nfthttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/nft"
 	nodehttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/node"
+	validatorhttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/validator"
 	wallethttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/wallet"
 	nftrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/nft"
 	noderepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/node"
+	validatorrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/validator"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
 	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
 	nftservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
 	nodeservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/node"
+	validatorservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/validator"
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/gofiber/fiber/v2"
@@ -49,6 +52,13 @@ func (s *Server) RegisterRoutes() {
 	nHandler := nfthttp.NewHandler(nSvc)
 	nftGroup := api.Group("/nft")
 	nHandler.RegisterRoutes(nftGroup)
+
+	// validator routes
+	vRepo := validatorrepo.New()
+	vSvc := validatorservice.New(vRepo)
+	vHandler := validatorhttp.NewHandler(vSvc)
+	vGroup := api.Group("/validator")
+	vHandler.RegisterRoutes(vGroup)
 
 	// node routes
 	nodeRepo := noderepo.New()
