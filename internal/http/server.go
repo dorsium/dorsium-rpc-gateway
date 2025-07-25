@@ -6,10 +6,12 @@ import (
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
 	nfthttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/nft"
 	nodehttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/node"
+	proxyhttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/proxy"
 	validatorhttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/validator"
 	wallethttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/wallet"
 	nftrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/nft"
 	noderepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/node"
+	proxyrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/proxy"
 	validatorrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/validator"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
@@ -17,6 +19,7 @@ import (
 	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
 	nftservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
 	nodeservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/node"
+	proxyservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/proxy"
 	validatorservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/validator"
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
@@ -85,6 +88,13 @@ func (s *Server) RegisterRoutes() {
 	mHandler := mininghttp.NewHandler(mSvc)
 	miningGroup := api.Group("/mining")
 	mHandler.RegisterRoutes(miningGroup)
+
+	// proxy routes
+	pRepo := proxyrepo.New(s.cfg.NodeRPC)
+	pSvc := proxyservice.New(pRepo)
+	pHandler := proxyhttp.NewHandler(pSvc)
+	proxyGroup := api.Group("/proxy")
+	pHandler.RegisterRoutes(proxyGroup)
 
 	// Placeholders for future endpoints
 	for i := 0; i < 25; i++ {
