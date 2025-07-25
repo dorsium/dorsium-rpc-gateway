@@ -3,10 +3,13 @@ package http
 import (
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
+	nfthttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/nft"
 	wallethttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/wallet"
+	nftrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/nft"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
 	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
+	nftservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/gofiber/fiber/v2"
@@ -36,6 +39,13 @@ func (s *Server) RegisterRoutes() {
 	handler := wallethttp.NewHandler(svc)
 	walletGroup := api.Group("/wallet")
 	handler.RegisterRoutes(walletGroup)
+
+	// nft routes
+	nRepo := nftrepo.New()
+	nSvc := nftservice.New(nRepo, nftservice.NewDummyMintHandler())
+	nHandler := nfthttp.NewHandler(nSvc)
+	nftGroup := api.Group("/nft")
+	nHandler.RegisterRoutes(nftGroup)
 
 	// mining routes
 	mVerifier := miningservice.NewDummyVerifier()
