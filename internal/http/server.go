@@ -2,10 +2,13 @@ package http
 
 import (
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
+	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
 	wallethttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/wallet"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
+	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
+	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -33,6 +36,17 @@ func (s *Server) RegisterRoutes() {
 	handler := wallethttp.NewHandler(svc)
 	walletGroup := api.Group("/wallet")
 	handler.RegisterRoutes(walletGroup)
+
+	// mining routes
+	mVerifier := miningservice.NewDummyVerifier()
+	mSvc := miningservice.New(mVerifier, model.MiningStatus{
+		Mode:       "pow",
+		Difficulty: 1,
+		Challenge:  "0000",
+	})
+	mHandler := mininghttp.NewHandler(mSvc)
+	miningGroup := api.Group("/mining")
+	mHandler.RegisterRoutes(miningGroup)
 
 	// Placeholders for future endpoints
 	for i := 0; i < 25; i++ {
