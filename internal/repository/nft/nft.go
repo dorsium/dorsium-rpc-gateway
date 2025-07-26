@@ -2,6 +2,7 @@ package nft
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 )
@@ -13,6 +14,7 @@ type Repository interface {
 }
 
 type repo struct {
+	mu    sync.RWMutex
 	store map[string]model.NFTMetadata
 }
 
@@ -25,12 +27,16 @@ func New() Repository {
 }
 
 func (r *repo) Save(n model.NFTMetadata) error {
+	r.mu.Lock()
 	r.store[n.ID] = n
+	r.mu.Unlock()
 	return nil
 }
 
 func (r *repo) GetByID(id string) (*model.NFTMetadata, error) {
+	r.mu.RLock()
 	n, ok := r.store[id]
+	r.mu.RUnlock()
 	if !ok {
 		return nil, ErrNotFound
 	}

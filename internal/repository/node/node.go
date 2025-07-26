@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
@@ -15,6 +16,7 @@ type Repository interface {
 }
 
 type repo struct {
+	mu    sync.RWMutex
 	store map[string]model.Node
 }
 
@@ -61,7 +63,9 @@ func New() Repository {
 }
 
 func (r *repo) Get(id string) (*model.Node, error) {
+	r.mu.RLock()
 	n, ok := r.store[id]
+	r.mu.RUnlock()
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -69,14 +73,18 @@ func (r *repo) Get(id string) (*model.Node, error) {
 }
 
 func (r *repo) Update(n *model.Node) error {
+	r.mu.Lock()
 	r.store[n.ID] = *n
+	r.mu.Unlock()
 	return nil
 }
 
 func (r *repo) List() ([]model.Node, error) {
+	r.mu.RLock()
 	res := make([]model.Node, 0, len(r.store))
 	for _, n := range r.store {
 		res = append(res, n)
 	}
+	r.mu.RUnlock()
 	return res, nil
 }
