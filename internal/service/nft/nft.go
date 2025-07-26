@@ -23,9 +23,9 @@ type Repository interface {
 
 // Service exposes NFT operations.
 type Service interface {
-	GetMetadata(id string) (*model.NFTMetadata, error)
-	MintNFT(model.MintRequest) (*model.NFTMetadata, error)
-	GetImage(id string) ([]byte, string, error)
+	GetMetadata(ctx context.Context, id string) (*model.NFTMetadata, error)
+	MintNFT(ctx context.Context, req model.MintRequest) (*model.NFTMetadata, error)
+	GetImage(ctx context.Context, id string) ([]byte, string, error)
 }
 
 type service struct {
@@ -38,11 +38,11 @@ func New(repo Repository, mh MintHandler) Service {
 	return &service{repo: repo, mintHandler: mh}
 }
 
-func (s *service) GetMetadata(id string) (*model.NFTMetadata, error) {
+func (s *service) GetMetadata(ctx context.Context, id string) (*model.NFTMetadata, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *service) MintNFT(req model.MintRequest) (*model.NFTMetadata, error) {
+func (s *service) MintNFT(ctx context.Context, req model.MintRequest) (*model.NFTMetadata, error) {
 	nft := model.NFTMetadata{
 		ID:         uuid.New().String(),
 		Name:       req.Name,
@@ -58,14 +58,14 @@ func (s *service) MintNFT(req model.MintRequest) (*model.NFTMetadata, error) {
 	return &nft, nil
 }
 
-func (s *service) GetImage(id string) ([]byte, string, error) {
+func (s *service) GetImage(ctx context.Context, id string) ([]byte, string, error) {
 	nft, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, "", err
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	ctx, cancel := context.WithTimeout(context.Background(), client.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, client.Timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, nft.ImageURL, nil)

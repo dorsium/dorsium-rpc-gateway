@@ -1,10 +1,12 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	nftsvc "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
@@ -52,7 +54,7 @@ func TestNFTMintSuccess(t *testing.T) {
 	svc := nftsvc.New(repo, mh)
 
 	req := model.MintRequest{Name: "Test", ImageURL: "http://example.com/img.png"}
-	nft, err := svc.MintNFT(req)
+	nft, err := svc.MintNFT(context.Background(), req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -72,7 +74,7 @@ func TestNFTMintMintError(t *testing.T) {
 	mh := &fakeMintHandler{err: errors.New("mint fail")}
 	svc := nftsvc.New(repo, mh)
 	req := model.MintRequest{Name: "Test", ImageURL: "http://example.com/img.png"}
-	if _, err := svc.MintNFT(req); err == nil {
+	if _, err := svc.MintNFT(context.Background(), req); err == nil {
 		t.Fatalf("expected error from mint handler")
 	}
 }
@@ -82,7 +84,7 @@ func TestNFTMintSaveError(t *testing.T) {
 	mh := &fakeMintHandler{}
 	svc := nftsvc.New(repo, mh)
 	req := model.MintRequest{Name: "Test", ImageURL: "http://example.com/img.png"}
-	if _, err := svc.MintNFT(req); err == nil {
+	if _, err := svc.MintNFT(context.Background(), req); err == nil {
 		t.Fatalf("expected save error")
 	}
 }
@@ -98,7 +100,7 @@ func TestNFTGetImageSuccess(t *testing.T) {
 	repo := &fakeRepo{item: &model.NFTMetadata{ID: "1", ImageURL: srv.URL}}
 	svc := nftsvc.New(repo, &fakeMintHandler{})
 
-	data, ct, err := svc.GetImage("1")
+	data, ct, err := svc.GetImage(context.Background(), "1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -113,7 +115,7 @@ func TestNFTGetImageSuccess(t *testing.T) {
 func TestNFTGetImageRepoError(t *testing.T) {
 	repo := &fakeRepo{getErr: errors.New("missing")}
 	svc := nftsvc.New(repo, &fakeMintHandler{})
-	if _, _, err := svc.GetImage("x"); err == nil {
+	if _, _, err := svc.GetImage(context.Background(), "x"); err == nil {
 		t.Fatalf("expected repo error")
 	}
 }
@@ -121,7 +123,25 @@ func TestNFTGetImageRepoError(t *testing.T) {
 func TestNFTGetImageRequestError(t *testing.T) {
 	repo := &fakeRepo{item: &model.NFTMetadata{ID: "1", ImageURL: "http://%41"}}
 	svc := nftsvc.New(repo, &fakeMintHandler{})
-	if _, _, err := svc.GetImage("1"); err == nil {
+	if _, _, err := svc.GetImage(context.Background(), "1"); err == nil {
 		t.Fatalf("expected request error")
+	}
+}
+
+func TestNFTGetImageContextCancel(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		w.Write([]byte("img"))
+	}))
+	defer srv.Close()
+
+	repo := &fakeRepo{item: &model.NFTMetadata{ID: "1", ImageURL: srv.URL}}
+	svc := nftsvc.New(repo, &fakeMintHandler{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	if _, _, err := svc.GetImage(ctx, "1"); err == nil {
+		t.Fatalf("expected context cancellation error")
 	}
 }
