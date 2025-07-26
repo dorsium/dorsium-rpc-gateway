@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dorsium/dorsium-rpc-gateway/internal/config"
+	adminhttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/admin"
 	dapphttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/dapp"
 	mininghttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/mining"
 	nfthttp "github.com/dorsium/dorsium-rpc-gateway/internal/http/nft"
@@ -20,6 +21,7 @@ import (
 	validatorrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/validator"
 	walletrepo "github.com/dorsium/dorsium-rpc-gateway/internal/repository/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/internal/service"
+	adminservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/admin"
 	dappservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/dapp"
 	miningservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/mining"
 	nftservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/nft"
@@ -115,6 +117,12 @@ func (s *Server) RegisterRoutes() {
 	pHandler := proxyhttp.NewHandler(pSvc)
 	proxyGroup := api.Group("/proxy")
 	pHandler.RegisterRoutes(proxyGroup)
+
+	// admin routes
+	aSvc := adminservice.New(nodeRepo, vRepo)
+	aHandler := adminhttp.NewHandler(aSvc, s.cfg.AdminToken)
+	adminGroup := s.app.Group("/admin")
+	aHandler.RegisterRoutes(adminGroup)
 
 	// Placeholders for future endpoints
 	for i := 0; i < 25; i++ {
