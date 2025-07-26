@@ -16,15 +16,17 @@ type Repository interface {
 }
 
 type repo struct {
-	baseURL string
-	client  *http.Client
+	baseURL     string
+	client      *http.Client
+	maxRespSize int64
 }
 
 // New creates a proxy repository.
-func New(baseURL string) Repository {
+func New(baseURL string, maxSize int64) Repository {
 	return &repo{
-		baseURL: baseURL,
-		client:  &http.Client{Timeout: 10 * time.Second},
+		baseURL:     baseURL,
+		client:      &http.Client{Timeout: 10 * time.Second},
+		maxRespSize: maxSize,
 	}
 }
 
@@ -54,9 +56,13 @@ func (r *repo) tryRequest(ctx context.Context, method, url string, body []byte) 
 		return nil, err
 	}
 	defer resp.Body.Close()
-	out, err := io.ReadAll(resp.Body)
+	reader := io.LimitReader(resp.Body, r.maxRespSize+1)
+	out, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
+	}
+	if int64(len(out)) > r.maxRespSize {
+		return nil, fmt.Errorf("response too large")
 	}
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("rpc error: %s", resp.Status)

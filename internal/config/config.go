@@ -2,31 +2,34 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"time"
 )
 
 // Config holds application configuration.
 type Config struct {
-	Address        string
-	ReadTimeout    time.Duration
-	WriteTimeout   time.Duration
-	NodeRPC        string
-	Version        string
-	Mode           string
-	DisableMetrics bool
-	AdminToken     string
+	Address         string
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	NodeRPC         string
+	Version         string
+	Mode            string
+	DisableMetrics  bool
+	AdminToken      string
+	MaxResponseSize int64
 }
 
 // New creates a Config with default values.
 func New() *Config {
 	c := &Config{
-		Address:      ":8080",
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		NodeRPC:      "http://localhost:26657",
-		Version:      "dev",
-		Mode:         "production",
-		AdminToken:   "changeme",
+		Address:         ":8080",
+		ReadTimeout:     5 * time.Second,
+		WriteTimeout:    10 * time.Second,
+		NodeRPC:         "http://localhost:26657",
+		Version:         "dev",
+		Mode:            "production",
+		AdminToken:      "changeme",
+		MaxResponseSize: 1 << 20,
 	}
 	if addr := os.Getenv("ADDRESS"); addr != "" {
 		c.Address = addr
@@ -42,6 +45,11 @@ func New() *Config {
 	}
 	if t := os.Getenv("ADMIN_TOKEN"); t != "" {
 		c.AdminToken = t
+	}
+	if sz := os.Getenv("MAX_RESPONSE_SIZE"); sz != "" {
+		if v, err := strconv.ParseInt(sz, 10, 64); err == nil {
+			c.MaxResponseSize = v
+		}
 	}
 	c.DisableMetrics = os.Getenv("DISABLE_METRICS") == "true"
 	return c
