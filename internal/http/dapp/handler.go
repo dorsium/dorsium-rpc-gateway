@@ -1,10 +1,9 @@
 package dapp
 
 import (
-	"regexp"
-
 	dappsvc "github.com/dorsium/dorsium-rpc-gateway/internal/service/dapp"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
+	"github.com/dorsium/dorsium-rpc-gateway/pkg/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
@@ -58,7 +57,7 @@ func (h *Handler) verifyWallet(c *fiber.Ctx) error {
 
 func (h *Handler) permissions(c *fiber.Ctx) error {
 	addr := c.Params("address")
-	if !isValidAddress(addr) {
+	if !utils.IsValidAddress(addr) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid address"})
 	}
 	p, err := h.service.GetPermissions(addr)
@@ -66,13 +65,4 @@ func (h *Handler) permissions(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(p)
-}
-
-var (
-	hexRegex    = regexp.MustCompile(`^(0x)?[0-9a-fA-F]{40}$`)
-	bech32Regex = regexp.MustCompile(`^[a-z0-9]{1,83}1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$`)
-)
-
-func isValidAddress(addr string) bool {
-	return hexRegex.MatchString(addr) || bech32Regex.MatchString(addr)
 }
