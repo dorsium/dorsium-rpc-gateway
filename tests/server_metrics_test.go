@@ -14,7 +14,11 @@ import (
 )
 
 func TestMetricsAggregatesUnknown(t *testing.T) {
-	cfg := config.New()
+	t.Setenv("ADMIN_TOKEN", "secret")
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatalf("config.New failed: %v", err)
+	}
 	cfg.DisableMetrics = false
 	srv := server.NewServer(cfg, service.New())
 	srv.RegisterRoutes()
