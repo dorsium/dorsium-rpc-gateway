@@ -6,6 +6,9 @@ import (
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 )
 
+// MaxLogLength caps the number of log entries kept in memory.
+const MaxLogLength = 100
+
 // NodeRepository defines listing capabilities for nodes.
 type NodeRepository interface {
 	List() ([]model.Node, error)
@@ -51,18 +54,21 @@ func (s *service) Broadcast(msg string) error {
 	for _, v := range validators {
 		s.logs = append(s.logs, "validator "+v.Address+": "+msg)
 	}
+	if len(s.logs) > MaxLogLength {
+		s.logs = s.logs[len(s.logs)-MaxLogLength:]
+	}
 	return nil
 }
 
 func (s *service) GetLogs() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if len(s.logs) <= 100 {
+	if len(s.logs) <= MaxLogLength {
 		res := make([]string, len(s.logs))
 		copy(res, s.logs)
 		return res
 	}
-	res := make([]string, 100)
-	copy(res, s.logs[len(s.logs)-100:])
+	res := make([]string, MaxLogLength)
+	copy(res, s.logs[len(s.logs)-MaxLogLength:])
 	return res
 }
