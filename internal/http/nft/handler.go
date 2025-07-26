@@ -27,7 +27,7 @@ func (h *Handler) RegisterRoutes(r fiber.Router) {
 
 func (h *Handler) getMetadata(c *fiber.Ctx) error {
 	id := c.Params("id")
-	meta, err := h.service.GetMetadata(id)
+	meta, err := h.service.GetMetadata(c.UserContext(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 	}
@@ -42,7 +42,7 @@ func (h *Handler) mint(c *fiber.Ctx) error {
 	if err := h.validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "validation failed"})
 	}
-	meta, err := h.service.MintNFT(req)
+	meta, err := h.service.MintNFT(c.UserContext(), req)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -51,7 +51,7 @@ func (h *Handler) mint(c *fiber.Ctx) error {
 
 func (h *Handler) getImage(c *fiber.Ctx) error {
 	id := c.Params("id")
-	data, ct, err := h.service.GetImage(id)
+	data, ct, err := h.service.GetImage(c.UserContext(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 	}
