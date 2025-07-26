@@ -11,7 +11,7 @@ import (
 // Repository abstracts validator data storage.
 type Repository interface {
 	Get(address string) (*model.Validator, error)
-	List() ([]model.Validator, error)
+	List(page, limit int) ([]model.Validator, error)
 }
 
 type repo struct {
@@ -55,12 +55,28 @@ func (r *repo) Get(address string) (*model.Validator, error) {
 	return &v, nil
 }
 
-func (r *repo) List() ([]model.Validator, error) {
-	r.mu.RLock()
-	res := make([]model.Validator, 0, len(r.store))
-	for _, v := range r.store {
-		res = append(res, v)
+func (r *repo) List(page, limit int) ([]model.Validator, error) {
+	if page <= 0 {
+		page = 1
 	}
-	r.mu.RUnlock()
+	if limit <= 0 {
+		limit = len(r.store)
+	}
+	start := (page - 1) * limit
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	res := make([]model.Validator, 0, limit)
+	i := 0
+	for _, v := range r.store {
+		if i >= start+limit {
+			break
+		}
+		if i >= start {
+			res = append(res, v)
+		}
+		i++
+	}
 	return res, nil
 }

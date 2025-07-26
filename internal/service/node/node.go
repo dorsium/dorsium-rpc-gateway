@@ -13,7 +13,7 @@ const MaxListLimit = 100
 type Repository interface {
 	Get(id string) (*model.Node, error)
 	Update(n *model.Node) error
-	List() ([]model.Node, error)
+	List(page, limit int) ([]model.Node, error)
 }
 
 // Service exposes node operations.
@@ -70,10 +70,6 @@ func (s *service) GetMetrics(id string) (*model.NodeMetrics, error) {
 }
 
 func (s *service) List(page, limit int) (*model.NodeListResponse, error) {
-	nodes, err := s.repo.List()
-	if err != nil {
-		return nil, err
-	}
 	if page <= 0 {
 		page = 1
 	}
@@ -82,16 +78,14 @@ func (s *service) List(page, limit int) (*model.NodeListResponse, error) {
 	} else if limit > MaxListLimit {
 		limit = MaxListLimit
 	}
-	start := (page - 1) * limit
-	if start > len(nodes) {
-		return &model.NodeListResponse{Page: page, Limit: limit, Items: []model.NodeListItem{}}, nil
+
+	nodes, err := s.repo.List(page, limit)
+	if err != nil {
+		return nil, err
 	}
-	end := start + limit
-	if end > len(nodes) {
-		end = len(nodes)
-	}
-	items := make([]model.NodeListItem, 0, end-start)
-	for _, n := range nodes[start:end] {
+
+	items := make([]model.NodeListItem, 0, len(nodes))
+	for _, n := range nodes {
 		items = append(items, model.NodeListItem{ID: n.ID, Label: n.Label})
 	}
 	return &model.NodeListResponse{Page: page, Limit: limit, Items: items}, nil

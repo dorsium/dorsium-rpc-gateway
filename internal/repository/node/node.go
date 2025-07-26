@@ -12,7 +12,7 @@ import (
 type Repository interface {
 	Get(id string) (*model.Node, error)
 	Update(n *model.Node) error
-	List() ([]model.Node, error)
+	List(page, limit int) ([]model.Node, error)
 }
 
 type repo struct {
@@ -79,12 +79,29 @@ func (r *repo) Update(n *model.Node) error {
 	return nil
 }
 
-func (r *repo) List() ([]model.Node, error) {
-	r.mu.RLock()
-	res := make([]model.Node, 0, len(r.store))
-	for _, n := range r.store {
-		res = append(res, n)
+func (r *repo) List(page, limit int) ([]model.Node, error) {
+	if page <= 0 {
+		page = 1
 	}
-	r.mu.RUnlock()
+	if limit <= 0 {
+		limit = len(r.store)
+	}
+
+	start := (page - 1) * limit
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	res := make([]model.Node, 0, limit)
+	i := 0
+	for _, n := range r.store {
+		if i >= start+limit {
+			break
+		}
+		if i >= start {
+			res = append(res, n)
+		}
+		i++
+	}
 	return res, nil
 }
