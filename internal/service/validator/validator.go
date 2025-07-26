@@ -10,7 +10,7 @@ const MaxListLimit = 100
 // Repository describes persistence layer requirements.
 type Repository interface {
 	Get(address string) (*model.Validator, error)
-	List() ([]model.Validator, error)
+	List(page, limit int) ([]model.Validator, error)
 }
 
 // Service exposes validator operations.
@@ -49,10 +49,6 @@ func (s *service) GetProfile(address string) (*model.ValidatorProfile, error) {
 }
 
 func (s *service) List(page, limit int) (*model.ValidatorListResponse, error) {
-	vals, err := s.repo.List()
-	if err != nil {
-		return nil, err
-	}
 	if page <= 0 {
 		page = 1
 	}
@@ -61,16 +57,14 @@ func (s *service) List(page, limit int) (*model.ValidatorListResponse, error) {
 	} else if limit > MaxListLimit {
 		limit = MaxListLimit
 	}
-	start := (page - 1) * limit
-	if start > len(vals) {
-		return &model.ValidatorListResponse{Page: page, Limit: limit, Items: []model.ValidatorListItem{}}, nil
+
+	vals, err := s.repo.List(page, limit)
+	if err != nil {
+		return nil, err
 	}
-	end := start + limit
-	if end > len(vals) {
-		end = len(vals)
-	}
-	items := make([]model.ValidatorListItem, 0, end-start)
-	for _, v := range vals[start:end] {
+
+	items := make([]model.ValidatorListItem, 0, len(vals))
+	for _, v := range vals {
 		items = append(items, model.ValidatorListItem{Address: v.Address, Name: v.Name})
 	}
 	return &model.ValidatorListResponse{Page: page, Limit: limit, Items: items}, nil

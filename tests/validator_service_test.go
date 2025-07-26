@@ -22,8 +22,22 @@ func (f *fakeValidatorRepo) Get(address string) (*model.Validator, error) {
 	return nil, fmt.Errorf("not found")
 }
 
-func (f *fakeValidatorRepo) List() ([]model.Validator, error) {
-	return f.items, nil
+func (f *fakeValidatorRepo) List(page, limit int) ([]model.Validator, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = len(f.items)
+	}
+	start := (page - 1) * limit
+	if start >= len(f.items) {
+		return []model.Validator{}, nil
+	}
+	end := start + limit
+	if end > len(f.items) {
+		end = len(f.items)
+	}
+	return f.items[start:end], nil
 }
 
 func TestValidatorListLimitCap(t *testing.T) {

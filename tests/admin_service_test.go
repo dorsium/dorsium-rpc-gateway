@@ -10,13 +10,13 @@ import (
 
 type fakeNodeRepo struct{}
 
-func (f *fakeNodeRepo) List() ([]model.Node, error) {
+func (f *fakeNodeRepo) List(page, limit int) ([]model.Node, error) {
 	return []model.Node{{ID: "n1"}}, nil
 }
 
 type fakeAdminValidatorRepo struct{}
 
-func (f *fakeAdminValidatorRepo) List() ([]model.Validator, error) {
+func (f *fakeAdminValidatorRepo) List(page, limit int) ([]model.Validator, error) {
 	return []model.Validator{{Address: "v1"}}, nil
 }
 

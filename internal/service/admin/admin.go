@@ -11,12 +11,12 @@ const MaxLogLength = 100
 
 // NodeRepository defines listing capabilities for nodes.
 type NodeRepository interface {
-	List() ([]model.Node, error)
+	List(page, limit int) ([]model.Node, error)
 }
 
 // ValidatorRepository defines listing capabilities for validators.
 type ValidatorRepository interface {
-	List() ([]model.Validator, error)
+	List(page, limit int) ([]model.Validator, error)
 }
 
 // Service exposes admin operations.
@@ -38,11 +38,11 @@ func New(nRepo NodeRepository, vRepo ValidatorRepository) Service {
 }
 
 func (s *service) Broadcast(msg string) error {
-	nodes, err := s.nodes.List()
+	nodes, err := s.nodes.List(1, 0)
 	if err != nil {
 		return err
 	}
-	validators, err := s.validators.List()
+	validators, err := s.validators.List(1, 0)
 	if err != nil {
 		return err
 	}
