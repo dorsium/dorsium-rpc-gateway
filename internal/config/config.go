@@ -28,6 +28,12 @@ func New() *Config {
 		Mode:         "production",
 		AdminToken:   "changeme",
 	}
+	if addr := os.Getenv("ADDRESS"); addr != "" {
+		c.Address = addr
+	}
+	if rpc := os.Getenv("NODE_RPC"); rpc != "" {
+		c.NodeRPC = rpc
+	}
 	if v := os.Getenv("APP_VERSION"); v != "" {
 		c.Version = v
 	}
