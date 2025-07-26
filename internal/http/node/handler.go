@@ -73,6 +73,9 @@ func (h *Handler) metrics(c *fiber.Ctx) error {
 func (h *Handler) list(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	if limit > nodesvc.MaxListLimit {
+		limit = nodesvc.MaxListLimit
+	}
 	res, err := h.service.List(page, limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

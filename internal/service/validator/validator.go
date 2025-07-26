@@ -4,6 +4,9 @@ import (
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 )
 
+// MaxListLimit caps the maximum number of items returned by List.
+const MaxListLimit = 100
+
 // Repository describes persistence layer requirements.
 type Repository interface {
 	Get(address string) (*model.Validator, error)
@@ -55,6 +58,8 @@ func (s *service) List(page, limit int) (*model.ValidatorListResponse, error) {
 	}
 	if limit <= 0 {
 		limit = 20
+	} else if limit > MaxListLimit {
+		limit = MaxListLimit
 	}
 	start := (page - 1) * limit
 	if start > len(vals) {
