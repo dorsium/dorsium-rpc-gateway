@@ -1,8 +1,10 @@
 package nft
 
 import (
+	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/google/uuid"
@@ -61,19 +63,32 @@ func (s *service) GetImage(id string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	resp, err := http.Get(nft.ImageURL)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	ctx, cancel := context.WithTimeout(context.Background(), client.Timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, nft.ImageURL, nil)
+	if err != nil {
+		return nil, "", err
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, "", err
 	}
 	defer resp.Body.Close()
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", err
 	}
+
 	ct := resp.Header.Get("Content-Type")
 	if ct == "" {
 		ct = http.DetectContentType(data)
 	}
+
 	return data, ct, nil
 }
 
