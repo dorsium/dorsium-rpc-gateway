@@ -86,7 +86,7 @@ func (s *Server) RegisterRoutes() {
 
 	// nft routes
 	nRepo := nftrepo.New()
-	nSvc := nftservice.New(nRepo, nftservice.NewDummyMintHandler())
+	nSvc := nftservice.New(nRepo, nftservice.NewDummyMintHandler(), s.cfg.MaxResponseSize)
 	nHandler := nfthttp.NewHandler(nSvc)
 	nftGroup := api.Group("/nft")
 	nHandler.RegisterRoutes(nftGroup)
@@ -123,7 +123,7 @@ func (s *Server) RegisterRoutes() {
 	mHandler.RegisterRoutes(miningGroup)
 
 	// proxy routes
-	pRepo := proxyrepo.New(s.cfg.NodeRPC)
+	pRepo := proxyrepo.New(s.cfg.NodeRPC, s.cfg.MaxResponseSize)
 	pSvc := proxyservice.New(pRepo)
 	pHandler := proxyhttp.NewHandler(pSvc)
 	proxyGroup := api.Group("/proxy")

@@ -2,6 +2,7 @@ package nft
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -31,11 +32,12 @@ type Service interface {
 type service struct {
 	repo        Repository
 	mintHandler MintHandler
+	maxImgSize  int64
 }
 
 // New creates an NFT service.
-func New(repo Repository, mh MintHandler) Service {
-	return &service{repo: repo, mintHandler: mh}
+func New(repo Repository, mh MintHandler, maxSize int64) Service {
+	return &service{repo: repo, mintHandler: mh, maxImgSize: maxSize}
 }
 
 func (s *service) GetMetadata(ctx context.Context, id string) (*model.NFTMetadata, error) {
@@ -79,9 +81,13 @@ func (s *service) GetImage(ctx context.Context, id string) ([]byte, string, erro
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	reader := io.LimitReader(resp.Body, s.maxImgSize+1)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, "", err
+	}
+	if int64(len(data)) > s.maxImgSize {
+		return nil, "", fmt.Errorf("image too large")
 	}
 
 	ct := resp.Header.Get("Content-Type")

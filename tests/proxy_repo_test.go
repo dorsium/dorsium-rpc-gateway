@@ -17,7 +17,7 @@ func TestProxyRepository_ContextCancellation(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	repo := proxyrepo.New(srv.URL)
+	repo := proxyrepo.New(srv.URL, 1024)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
@@ -30,5 +30,18 @@ func TestProxyRepository_ContextCancellation(t *testing.T) {
 	defer cancel2()
 	if _, err := repo.SendTx(ctx2, []byte(`{}`)); err == nil {
 		t.Fatalf("expected context cancellation error")
+	}
+}
+
+func TestProxyRepository_LargeResponse(t *testing.T) {
+	payload := make([]byte, 2048)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(payload)
+	}))
+	defer srv.Close()
+
+	repo := proxyrepo.New(srv.URL, 1024)
+	if _, err := repo.ForwardGet(context.Background(), "/", ""); err == nil {
+		t.Fatalf("expected size limit error")
 	}
 }
