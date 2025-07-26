@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,8 +11,8 @@ import (
 
 // Repository forwards RPC requests to a Dorsium node.
 type Repository interface {
-	ForwardGet(path string, query string) ([]byte, error)
-	SendTx(data []byte) ([]byte, error)
+	ForwardGet(ctx context.Context, path string, query string) ([]byte, error)
+	SendTx(ctx context.Context, data []byte) ([]byte, error)
 }
 
 type repo struct {
@@ -27,7 +28,7 @@ func New(baseURL string) Repository {
 	}
 }
 
-func (r *repo) tryRequest(method, url string, body []byte) ([]byte, error) {
+func (r *repo) tryRequest(ctx context.Context, method, url string, body []byte) ([]byte, error) {
 	var resp *http.Response
 	var err error
 	for i := 0; i < 3; i++ {
@@ -35,12 +36,15 @@ func (r *repo) tryRequest(method, url string, body []byte) ([]byte, error) {
 		if body != nil {
 			b = bytes.NewReader(body)
 		}
-		req, reqErr := http.NewRequest(method, url, b)
+		reqCtx, cancel := context.WithTimeout(ctx, r.client.Timeout)
+		req, reqErr := http.NewRequestWithContext(reqCtx, method, url, b)
 		if reqErr != nil {
+			cancel()
 			return nil, reqErr
 		}
 		req.Header.Set("Content-Type", "application/json")
 		resp, err = r.client.Do(req)
+		cancel()
 		if err == nil {
 			break
 		}
@@ -60,15 +64,15 @@ func (r *repo) tryRequest(method, url string, body []byte) ([]byte, error) {
 	return out, nil
 }
 
-func (r *repo) ForwardGet(path string, query string) ([]byte, error) {
+func (r *repo) ForwardGet(ctx context.Context, path string, query string) ([]byte, error) {
 	url := r.baseURL + path
 	if query != "" {
 		url += "?" + query
 	}
-	return r.tryRequest(http.MethodGet, url, nil)
+	return r.tryRequest(ctx, http.MethodGet, url, nil)
 }
 
-func (r *repo) SendTx(data []byte) ([]byte, error) {
+func (r *repo) SendTx(ctx context.Context, data []byte) ([]byte, error) {
 	url := r.baseURL + "/tx/send"
-	return r.tryRequest(http.MethodPost, url, data)
+	return r.tryRequest(ctx, http.MethodPost, url, data)
 }

@@ -26,7 +26,7 @@ func (h *Handler) sendTx(c *fiber.Ctx) error {
 	if len(data) == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "empty body"})
 	}
-	resp, err := h.service.SendTx(data)
+	resp, err := h.service.SendTx(c.UserContext(), data)
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -35,7 +35,7 @@ func (h *Handler) sendTx(c *fiber.Ctx) error {
 
 func (h *Handler) proxyGet(c *fiber.Ctx) error {
 	path := c.Params("*")
-	resp, err := h.service.ProxyGet("/"+path, c.Context().QueryArgs().String())
+	resp, err := h.service.ProxyGet(c.UserContext(), "/"+path, c.Context().QueryArgs().String())
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": err.Error()})
 	}
