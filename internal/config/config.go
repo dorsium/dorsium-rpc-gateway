@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -20,7 +21,7 @@ type Config struct {
 }
 
 // New creates a Config with default values.
-func New() *Config {
+func New() (*Config, error) {
 	c := &Config{
 		Address:         ":8080",
 		ReadTimeout:     5 * time.Second,
@@ -28,7 +29,6 @@ func New() *Config {
 		NodeRPC:         "http://localhost:26657",
 		Version:         "dev",
 		Mode:            "production",
-		AdminToken:      "changeme",
 		MaxResponseSize: 1 << 20,
 	}
 	if addr := os.Getenv("ADDRESS"); addr != "" {
@@ -45,6 +45,8 @@ func New() *Config {
 	}
 	if t := os.Getenv("ADMIN_TOKEN"); t != "" {
 		c.AdminToken = t
+	} else {
+		return nil, errors.New("ADMIN_TOKEN is required")
 	}
 	if sz := os.Getenv("MAX_RESPONSE_SIZE"); sz != "" {
 		if v, err := strconv.ParseInt(sz, 10, 64); err == nil {
@@ -52,5 +54,5 @@ func New() *Config {
 		}
 	}
 	c.DisableMetrics = os.Getenv("DISABLE_METRICS") == "true"
-	return c
+	return c, nil
 }

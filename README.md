@@ -22,7 +22,7 @@ The server reads its configuration from environment variables:
 - `NODE_RPC` defines the node RPC endpoint (default `http://localhost:26657`).
 - `APP_VERSION` overrides the build version string (default `dev`).
 - `APP_MODE` sets the running mode (default `production`).
-- `ADMIN_TOKEN` configures the admin authentication token (default `changeme`).
+- `ADMIN_TOKEN` sets the admin authentication token (**required**).
 - `DISABLE_METRICS` turns off Prometheus metrics when set to `true`.
 - `MAX_RESPONSE_SIZE` limits the allowed response size in bytes (default `1048576`).
 
