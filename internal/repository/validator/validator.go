@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
@@ -14,6 +15,7 @@ type Repository interface {
 }
 
 type repo struct {
+	mu    sync.RWMutex
 	store map[string]model.Validator
 }
 
@@ -44,7 +46,9 @@ func New() Repository {
 }
 
 func (r *repo) Get(address string) (*model.Validator, error) {
+	r.mu.RLock()
 	v, ok := r.store[address]
+	r.mu.RUnlock()
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -52,9 +56,11 @@ func (r *repo) Get(address string) (*model.Validator, error) {
 }
 
 func (r *repo) List() ([]model.Validator, error) {
+	r.mu.RLock()
 	res := make([]model.Validator, 0, len(r.store))
 	for _, v := range r.store {
 		res = append(res, v)
 	}
+	r.mu.RUnlock()
 	return res, nil
 }
