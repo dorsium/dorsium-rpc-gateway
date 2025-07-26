@@ -5,16 +5,20 @@ import (
 
 	nodesvc "github.com/dorsium/dorsium-rpc-gateway/internal/service/node"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 // Handler provides node HTTP handlers.
 type Handler struct {
-	service nodesvc.Service
+	service  nodesvc.Service
+	validate *validator.Validate
 }
 
 // NewHandler creates a node handler.
-func NewHandler(svc nodesvc.Service) *Handler { return &Handler{service: svc} }
+func NewHandler(svc nodesvc.Service) *Handler {
+	return &Handler{service: svc, validate: validator.New()}
+}
 
 // RegisterRoutes registers node routes.
 func (h *Handler) RegisterRoutes(r fiber.Router) {
@@ -39,8 +43,8 @@ func (h *Handler) ping(c *fiber.Ctx) error {
 	if err := c.BodyParser(&p); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
-	if p.ID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id required"})
+	if err := h.validate.Struct(p); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "validation failed"})
 	}
 	if err := h.service.Ping(p); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
