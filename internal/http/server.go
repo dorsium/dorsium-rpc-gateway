@@ -31,6 +31,7 @@ import (
 	walletservice "github.com/dorsium/dorsium-rpc-gateway/internal/service/wallet"
 	"github.com/dorsium/dorsium-rpc-gateway/pkg/model"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/shirou/gopsutil/v3/cpu"
 )
 
@@ -50,6 +51,7 @@ type Server struct {
 func NewServer(cfg *config.Config, svc service.Service) *Server {
 	app := fiber.New()
 	s := &Server{cfg: cfg, app: app, service: svc, start: time.Now(), calls: make(map[string]int)}
+	app.Use(recover.New())
 	app.Use(func(c *fiber.Ctx) error {
 		err := c.Next()
 		route := c.Route()
