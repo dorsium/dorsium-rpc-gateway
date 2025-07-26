@@ -38,9 +38,9 @@ type NodeListResponse struct {
 
 // NodePing is received when nodes send heartbeat information.
 type NodePing struct {
-	ID        string `json:"id"`
-	Health    string `json:"health"`
-	SyncState string `json:"syncState"`
+	ID        string `json:"id" validate:"required"`
+	Health    string `json:"health" validate:"required"`
+	SyncState string `json:"syncState" validate:"required"`
 }
 
 // Node aggregates all node information.
