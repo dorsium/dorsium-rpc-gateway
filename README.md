@@ -14,3 +14,10 @@ Run unit tests with:
 go test ./...
 ```
 
+## Configuration
+
+The server reads its configuration from environment variables. Useful options:
+
+- `ADDRESS` sets the HTTP bind address (default `:8080`).
+- `NODE_RPC` defines the node RPC endpoint (default `http://localhost:26657`).
+
