@@ -1,15 +1,17 @@
 package proxy
 
+import "context"
+
 // Repository abstracts the proxy repository layer.
 type Repository interface {
-	ForwardGet(path string, query string) ([]byte, error)
-	SendTx(data []byte) ([]byte, error)
+	ForwardGet(ctx context.Context, path string, query string) ([]byte, error)
+	SendTx(ctx context.Context, data []byte) ([]byte, error)
 }
 
 // Service defines proxy operations.
 type Service interface {
-	ProxyGet(path string, query string) ([]byte, error)
-	SendTx(data []byte) ([]byte, error)
+	ProxyGet(ctx context.Context, path string, query string) ([]byte, error)
+	SendTx(ctx context.Context, data []byte) ([]byte, error)
 }
 
 type service struct {
@@ -21,10 +23,10 @@ func New(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) ProxyGet(path string, query string) ([]byte, error) {
-	return s.repo.ForwardGet(path, query)
+func (s *service) ProxyGet(ctx context.Context, path string, query string) ([]byte, error) {
+	return s.repo.ForwardGet(ctx, path, query)
 }
 
-func (s *service) SendTx(data []byte) ([]byte, error) {
-	return s.repo.SendTx(data)
+func (s *service) SendTx(ctx context.Context, data []byte) ([]byte, error) {
+	return s.repo.SendTx(ctx, data)
 }
