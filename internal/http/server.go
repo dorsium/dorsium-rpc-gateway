@@ -34,6 +34,8 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 )
 
+const maxCallsEntries = 100
+
 // Server holds dependencies for HTTP handlers and routes.
 type Server struct {
 	cfg     *config.Config
@@ -49,10 +51,19 @@ func NewServer(cfg *config.Config, svc service.Service) *Server {
 	app := fiber.New()
 	s := &Server{cfg: cfg, app: app, service: svc, start: time.Now(), calls: make(map[string]int)}
 	app.Use(func(c *fiber.Ctx) error {
+		err := c.Next()
+		route := c.Route()
+		ep := "unknown"
+		if route != nil && route.Path != "" && route.Path != "/" {
+			ep = route.Path
+		}
 		s.mu.Lock()
-		s.calls[c.Path()]++
+		if _, ok := s.calls[ep]; !ok && len(s.calls) >= maxCallsEntries {
+			ep = "unknown"
+		}
+		s.calls[ep]++
 		s.mu.Unlock()
-		return c.Next()
+		return err
 	})
 	return s
 }
@@ -173,4 +184,20 @@ func (s *Server) mode(c *fiber.Ctx) error {
 func (s *Server) Start() error {
 	s.RegisterRoutes()
 	return s.app.Listen(s.cfg.Address)
+}
+
+// App exposes the underlying Fiber app for testing.
+func (s *Server) App() *fiber.App {
+	return s.app
+}
+
+// Calls returns a snapshot of recorded endpoint calls.
+func (s *Server) Calls() map[string]int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cp := make(map[string]int, len(s.calls))
+	for k, v := range s.calls {
+		cp[k] = v
+	}
+	return cp
 }
