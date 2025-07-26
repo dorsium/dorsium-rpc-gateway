@@ -14,6 +14,7 @@ type Config struct {
 	Version        string
 	Mode           string
 	DisableMetrics bool
+	AdminToken     string
 }
 
 // New creates a Config with default values.
@@ -25,12 +26,16 @@ func New() *Config {
 		NodeRPC:      "http://localhost:26657",
 		Version:      "dev",
 		Mode:         "production",
+		AdminToken:   "changeme",
 	}
 	if v := os.Getenv("APP_VERSION"); v != "" {
 		c.Version = v
 	}
 	if m := os.Getenv("APP_MODE"); m != "" {
 		c.Mode = m
+	}
+	if t := os.Getenv("ADMIN_TOKEN"); t != "" {
+		c.AdminToken = t
 	}
 	c.DisableMetrics = os.Getenv("DISABLE_METRICS") == "true"
 	return c
